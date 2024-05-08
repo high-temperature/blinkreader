@@ -20,7 +20,7 @@ const CHUNK: usize = 20;
 struct BlinkReader {
     display: String,
     state: State,
-    full_text:String,
+    full_text:Vec<char>,
     position: usize,
 }
 
@@ -48,9 +48,9 @@ impl Application for BlinkReader {
         let initial_text = "Loading...".to_string();
             (
                 BlinkReader {
-                display:String::new(),
+                display:initial_text.clone(),
                 state: State::Idle,
-                full_text: initial_text,
+                full_text: initial_text.chars().collect(),
                 position:0,
                 },
                 Command::perform(
@@ -69,10 +69,8 @@ impl Application for BlinkReader {
         match message{
             Message::Tick =>{
                 if self.position<self.full_text.len(){
-                    let pr_chars:Vec<char> =self.full_text.chars().collect();
                     let end = (self.position + CHUNK).min(self.full_text.len());
-                    let sub_str = &pr_chars[self.position..end];
-                    self.display = sub_str.into_iter().collect();
+                    self.display = self.full_text[self.position..end].iter().collect();
                     self.position += CHUNK;
                 }
                 Command::none()
@@ -89,13 +87,12 @@ impl Application for BlinkReader {
                 Command::none()
             },
             Message::FileLoaded(Ok(content)) => {
-            self.full_text =  "Loading Successful!".to_string();
-            self.full_text = content;
+            self.full_text = content.chars().collect();
             self.position = 0;
             Command::none()
             },
-            Message::FileLoaded(Err(e))=>{
-                self.full_text = e.to_string();
+            Message::FileLoaded(Err(err))=>{
+                self.full_text = err.chars().collect();
                 Command::none()
             },
 
