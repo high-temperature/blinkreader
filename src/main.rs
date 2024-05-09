@@ -118,7 +118,11 @@ impl Application for BlinkReader {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        time::every(Duration::from_secs(1)).map(|_| Message::Tick)
+        match self.state{
+            State::Reading => time::every(Duration::from_secs(1)).map(|_| Message::Tick),
+            State::Idle => Subscription::none(),
+        }
+
     }
 
     fn theme(&self) -> Theme {
