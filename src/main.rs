@@ -37,7 +37,7 @@ enum Message {
     Tick,
     Toggle,
     Reset,
-    FileLoaded(Result<String,String>), // 修正: Vec<String>に変更
+    FileLoaded(Result<String,String>),
 }
 
 impl BlinkReader{
@@ -71,10 +71,6 @@ impl Application for BlinkReader {
                     let mut reader = BufReader::new(file);
                     let mut content = String::new();
                     reader.read_to_string(&mut content).await.map_err(|e| e.to_string())?;
-                    // let split_content: Vec<String> = content.split('。')
-                    //     .map(|s| format!("{}。", s))
-                    //     .collect();
-                    //Ok(split_content)
                     let content = content.replace("\n","").replace("\r","");
                     Ok(content)
                 },
@@ -91,16 +87,6 @@ impl Application for BlinkReader {
         match message {
             Message::Tick => {
                 if self.position < self.full_text.len() {
-                //    let end = (self.position + CHUNK).min(self.full_text.len());
-                   
-                //   let mut actual_end = end;
-                //    for i in self.position..end{
-                //     if self.full_text[i].contains("。"){
-                //         actual_end = i+1;
-                //         break;
-                //         }
-                //    }
-                //    self.display = self.full_text[self.position..actual_end].join("\n");
                 
                 let end = self.full_text[self.position..]
                     .char_indices()
