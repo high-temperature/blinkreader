@@ -1,4 +1,5 @@
 use std::time::Duration;
+use std::vec;
 
 use async_std::path::Path;
 use iced::theme::Theme;
@@ -21,7 +22,7 @@ const MIN_INTERVAL:f64 = 0.1;
 const MAX_INTERVAL:f64 = 5.0;
 
 pub struct BlinkReader {
-    display: String,
+    display: Vec<String>,
     state: State,
     full_text: String,
     position: usize,
@@ -32,7 +33,7 @@ pub struct BlinkReader {
 impl BlinkReader{
     fn reset(&mut self){
         self.position = 0;
-        self.display = String::new();
+        self.display = vec!["".to_string(),"".to_string()];
     }
 }
 
@@ -44,13 +45,13 @@ impl Application for BlinkReader {
 
     fn new(_flags: ()) -> (BlinkReader, Command<Message>) {
         let full_text_path = Path::new("D:\\Document\\Rust\\blinktextreader\\src\\text\\第1節　実体経済の動向.txt");
-        let initial_text = "Loading...".to_string();
+        let initial_text = vec!["Loading...".to_string(),"".to_string()];
 
         (
             BlinkReader {
                 display: initial_text.clone(),
                 state: State::Idle,
-                full_text: initial_text,
+                full_text: initial_text[0].clone(),
                 position: 0,
                 interval: Duration::from_secs(1),
                 slider_value:1.0,
@@ -62,7 +63,6 @@ impl Application for BlinkReader {
                     let mut reader = BufReader::new(file);
                     let mut content = String::new();
                     reader.read_to_string(&mut content).await.map_err(|e| e.to_string())?;
-                    //let content = content.replace("\n","").replace("\r","");
                     Ok(content)
                 },
                 |result| Message::FileLoaded(result)
@@ -83,8 +83,9 @@ impl Application for BlinkReader {
                     .char_indices()
                     .nth(CHUNK)
                     .map_or(self.full_text.len(),|(idx, _ )| self.position + idx);
-                
-                    self.display = self.full_text[self.position..end].to_string();
+                    self.display[0] = self.display[1].clone();
+                    self.display[1] = self.full_text[self.position..end].to_string();
+                    
                     self.position =end;
                 }
                 Command::none()
@@ -119,7 +120,8 @@ impl Application for BlinkReader {
     }
 
     fn view(&self) -> Element<Self::Message> {
-        let text = Text::new(&self.display).size(30).font(GENEIKOBURIMIN);
+        let text0 = Text::new(&self.display[0]).size(30).font(GENEIKOBURIMIN);
+        let text1 = Text::new(&self.display[1]).size(30).font(GENEIKOBURIMIN);
         let toggle_button = button(Text::new("Toggle")).on_press(Message::Toggle);
         let reset_button = button(Text::new("Reset")).on_press(Message::Reset);
 
@@ -129,7 +131,7 @@ impl Application for BlinkReader {
             Message::IntervalChanged,
         );
 
-        let content = column![text, toggle_button, reset_button,slider]
+        let content = column![text0, text1, toggle_button, reset_button,slider]
             .align_items(Alignment::Center)
             .spacing(20);
 
