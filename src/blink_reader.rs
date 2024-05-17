@@ -7,6 +7,7 @@ use iced::{executor, time, Alignment, Application, Command, Element, Font, Lengt
 use async_std::{self, fs};
 use async_std::io::BufReader;
 use async_std::prelude::*;
+use iced::widget::Slider;
 
 use crate::message::{Message, State};
 
@@ -16,6 +17,8 @@ const GENEIKOBURIMIN: Font = Font::External {
 };
 
 const CHUNK: usize = 20;
+const MIN_INTERVAL:f64 = 0.1;
+const MAX_INTERVAL:f64 = 5.0;
 
 pub struct BlinkReader {
     display: String,
@@ -23,6 +26,7 @@ pub struct BlinkReader {
     full_text: String,
     position: usize,
     interval:Duration,
+    slider_value: f64,
 }
 
 impl BlinkReader{
@@ -49,6 +53,7 @@ impl Application for BlinkReader {
                 full_text: initial_text,
                 position: 0,
                 interval: Duration::from_secs(1),
+                slider_value:1.0,
             },
             Command::perform(
                 async move {
@@ -105,6 +110,11 @@ impl Application for BlinkReader {
                 self.reset();
                 Command::none()
             },
+            Message::IntervalChanged(new_interval)=>{
+                self.interval = Duration::from_secs_f64(new_interval);
+                self.slider_value = new_interval;
+                Command::none()
+            }
         }
     }
 
@@ -113,7 +123,13 @@ impl Application for BlinkReader {
         let toggle_button = button(Text::new("Toggle")).on_press(Message::Toggle);
         let reset_button = button(Text::new("Reset")).on_press(Message::Reset);
 
-        let content = column![text, toggle_button, reset_button]
+        let slider = Slider::new(
+            MIN_INTERVAL..=MAX_INTERVAL,
+            self.slider_value,
+            Message::IntervalChanged,
+        );
+
+        let content = column![text, toggle_button, reset_button,slider]
             .align_items(Alignment::Center)
             .spacing(20);
 
