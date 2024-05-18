@@ -1,3 +1,5 @@
+mod utils;
+
 use std::time::Duration;
 use std::vec;
 
@@ -11,45 +13,12 @@ use async_std::prelude::*;
 use iced::widget::Slider;
 
 use crate::message::{Message, State};
+use crate::utils::split_into_chunks;
 
 const GENEIKOBURIMIN: Font = Font::External {
     name: "GenEiKoburiMin",
     bytes: include_bytes!("font/GenEiKoburiMin6-R.ttf"),
 };
-
-fn split_into_chunks(text: String, chunk_size: usize) -> Vec<String> {
-    let mut chunks = Vec::new();
-    let mut start = 0;
-    let text_len = text.len();
-
-    while start < text_len {
-        let mut end = start;
-        let mut char_count = 0;
-
-        for (idx, c) in text[start..].char_indices() {
-            if c == '\n' {
-                end = start + idx + 1;
-                break;
-            }
-            if char_count >= chunk_size {
-                end = start + idx;
-                break;
-            }
-            char_count += 1;
-            end = start + idx + 1;
-        }
-
-        if end > text_len {
-            end = text_len;
-        }
-
-        let chunk = text[start..end].to_string();
-        chunks.push(chunk);
-        start = end;
-    }
-
-    chunks
-}
 
 
 const CHUNK: usize = 20;
@@ -68,7 +37,7 @@ pub struct BlinkReader {
 impl BlinkReader{
     fn reset(&mut self){
         self.position = 0;
-        self.display = vec!["".to_string(),"".to_string(),"".to_string(),"".to_string()];
+        self.display.fill("".to_string());
     }
 }
 
@@ -153,10 +122,14 @@ impl Application for BlinkReader {
     }
 
     fn view(&self) -> Element<Self::Message> {
-        let text0 = Text::new(&self.display[0]).size(30).font(GENEIKOBURIMIN);
-        let text1 = Text::new(&self.display[1]).size(30).font(GENEIKOBURIMIN);
-        let text2 = Text::new(&self.display[2]).size(30).font(GENEIKOBURIMIN);
-        let text3 = Text::new(&self.display[3]).size(30).font(GENEIKOBURIMIN);
+        let texts: Vec<Element<_>> = self.display.iter()
+            .map(|line| Text::new(line).size(30).font(GENEIKOBURIMIN).into())
+            .collect();
+
+        // let text0 = Text::new(&self.display[0]).size(30).font(GENEIKOBURIMIN);
+        // let text1 = Text::new(&self.display[1]).size(30).font(GENEIKOBURIMIN);
+        // let text2 = Text::new(&self.display[2]).size(30).font(GENEIKOBURIMIN);
+        // let text3 = Text::new(&self.display[3]).size(30).font(GENEIKOBURIMIN);
         let toggle_button = button(Text::new("Toggle")).on_press(Message::Toggle);
         let reset_button = button(Text::new("Reset")).on_press(Message::Reset);
 
@@ -166,9 +139,16 @@ impl Application for BlinkReader {
             Message::IntervalChanged,
         );
 
-        let content = column![text0, text1, text2, text3, toggle_button, reset_button,slider]
-            .align_items(Alignment::Center)
-            .spacing(20);
+        let mut content = column!().align_items(Alignment::Center).spacing(20);
+        for text in texts{
+            content = content.push(text);
+        }
+
+        content = content.push(toggle_button).push(reset_button).push(slider);
+
+        // let content = column![text0, text1, text2, text3, toggle_button, reset_button,slider]
+        //     .align_items(Alignment::Center)
+        //     .spacing(20);
 
         container(content)
             .width(Length::Fill)

@@ -1,5 +1,6 @@
 mod blink_reader;
 mod message;
+mod utils;
 
 use blink_reader::BlinkReader;
 use iced::{Application, Settings};
