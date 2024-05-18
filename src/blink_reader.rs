@@ -48,7 +48,7 @@ impl Application for BlinkReader {
     type Flags = ();
 
     fn new(_flags: ()) -> (BlinkReader, Command<Message>) {
-        let full_text_path = Path::new("D:\\Document\\Rust\\blinktextreader\\src\\text\\第1節　実体経済の動向.txt");
+        let full_text_path = Path::new("src\\text\\第1節　実体経済の動向.txt");
         let initial_text = vec!["Loading...".to_string();10];
 
         (
