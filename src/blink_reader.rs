@@ -17,6 +17,41 @@ const GENEIKOBURIMIN: Font = Font::External {
     bytes: include_bytes!("font/GenEiKoburiMin6-R.ttf"),
 };
 
+fn split_into_chunks(text: String, chunk_size: usize) -> Vec<String> {
+    let mut chunks = Vec::new();
+    let mut start = 0;
+    let text_len = text.len();
+
+    while start < text_len {
+        let mut end = start;
+        let mut char_count = 0;
+
+        for (idx, c) in text[start..].char_indices() {
+            if c == '\n' {
+                end = start + idx + 1;
+                break;
+            }
+            if char_count >= chunk_size {
+                end = start + idx;
+                break;
+            }
+            char_count += 1;
+            end = start + idx + 1;
+        }
+
+        if end > text_len {
+            end = text_len;
+        }
+
+        let chunk = text[start..end].to_string();
+        chunks.push(chunk);
+        start = end;
+    }
+
+    chunks
+}
+
+
 const CHUNK: usize = 20;
 const MIN_INTERVAL:f64 = 0.1;
 const MAX_INTERVAL:f64 = 5.0;
@@ -24,7 +59,7 @@ const MAX_INTERVAL:f64 = 5.0;
 pub struct BlinkReader {
     display: Vec<String>,
     state: State,
-    full_text: String,
+    full_text: Vec<String>,
     position: usize,
     interval:Duration,
     slider_value: f64,
@@ -33,7 +68,7 @@ pub struct BlinkReader {
 impl BlinkReader{
     fn reset(&mut self){
         self.position = 0;
-        self.display = vec!["".to_string(),"".to_string()];
+        self.display = vec!["".to_string(),"".to_string(),"".to_string(),"".to_string()];
     }
 }
 
@@ -45,13 +80,13 @@ impl Application for BlinkReader {
 
     fn new(_flags: ()) -> (BlinkReader, Command<Message>) {
         let full_text_path = Path::new("D:\\Document\\Rust\\blinktextreader\\src\\text\\第1節　実体経済の動向.txt");
-        let initial_text = vec!["Loading...".to_string(),"".to_string()];
+        let initial_text = vec!["Loading...".to_string();10];
 
         (
             BlinkReader {
                 display: initial_text.clone(),
                 state: State::Idle,
-                full_text: initial_text[0].clone(),
+                full_text: initial_text.clone(),
                 position: 0,
                 interval: Duration::from_secs(1),
                 slider_value:1.0,
@@ -63,7 +98,8 @@ impl Application for BlinkReader {
                     let mut reader = BufReader::new(file);
                     let mut content = String::new();
                     reader.read_to_string(&mut content).await.map_err(|e| e.to_string())?;
-                    Ok(content)
+                    let lines = split_into_chunks(content, CHUNK);
+                    Ok(lines)
                 },
                 |result| Message::FileLoaded(result)
             ),
@@ -79,14 +115,11 @@ impl Application for BlinkReader {
             Message::Tick => {
                 if self.position < self.full_text.len() {
                 
-                let end = self.full_text[self.position..]
-                    .char_indices()
-                    .nth(CHUNK)
-                    .map_or(self.full_text.len(),|(idx, _ )| self.position + idx);
                     self.display[0] = self.display[1].clone();
-                    self.display[1] = self.full_text[self.position..end].to_string();
-                    
-                    self.position =end;
+                    self.display[1] = self.display[2].clone();
+                    self.display[2] = self.display[3].clone();
+                    self.display[3] = self.full_text[self.position].clone();
+                    self.position += 1 ;
                 }
                 Command::none()
             },
@@ -107,7 +140,7 @@ impl Application for BlinkReader {
                 Command::none()
             },
             Message::FileLoaded(Err(err)) => {
-                self.full_text = format!("Error loading file: {}", err);
+                self.full_text = vec![format!("Error loading file: {}", err)];
                 self.reset();
                 Command::none()
             },
@@ -122,6 +155,8 @@ impl Application for BlinkReader {
     fn view(&self) -> Element<Self::Message> {
         let text0 = Text::new(&self.display[0]).size(30).font(GENEIKOBURIMIN);
         let text1 = Text::new(&self.display[1]).size(30).font(GENEIKOBURIMIN);
+        let text2 = Text::new(&self.display[2]).size(30).font(GENEIKOBURIMIN);
+        let text3 = Text::new(&self.display[3]).size(30).font(GENEIKOBURIMIN);
         let toggle_button = button(Text::new("Toggle")).on_press(Message::Toggle);
         let reset_button = button(Text::new("Reset")).on_press(Message::Reset);
 
@@ -131,7 +166,7 @@ impl Application for BlinkReader {
             Message::IntervalChanged,
         );
 
-        let content = column![text0, text1, toggle_button, reset_button,slider]
+        let content = column![text0, text1, text2, text3, toggle_button, reset_button,slider]
             .align_items(Alignment::Center)
             .spacing(20);
 

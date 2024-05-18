@@ -11,5 +11,5 @@ pub enum Message {
     Toggle,
     Reset,
     IntervalChanged(f64),
-    FileLoaded(Result<String,String>),
+    FileLoaded(Result<Vec<String>,String>),
 }
