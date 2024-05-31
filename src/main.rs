@@ -54,9 +54,8 @@ impl Application for BlinkReader {
     type Flags = ();
 
     fn new(_flags: ()) -> (BlinkReader, Command<Message>) {
-        let full_text_path = Path::new("C:\\Users\\kyoch\\Downloads\\R5_03_01_生産性の動向と課題 (1).txt");
+        let full_text_path = Path::new("C:\\Users\\Matsumoto\\source\\repos\\blinkreader\\src\\text\\母をたずねて三千里.txt");
         let initial_text = "Loading...".to_string();
-
         (
             BlinkReader {
                 display: initial_text.clone(),
