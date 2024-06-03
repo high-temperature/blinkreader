@@ -11,3 +11,4 @@ fn main() -> iced::Result {
         ..Settings::default()
     })
 }
+
